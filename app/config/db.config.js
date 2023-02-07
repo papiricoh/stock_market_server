@@ -3,4 +3,5 @@ module.exports = {
     USER: "root",
     PASSWORD: "rootroot",
     DB: "stock_market"
+
 };
