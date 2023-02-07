@@ -32,6 +32,32 @@ app.get("/test", (req, result) => {
     });
 });
 
+app.get("/companies/:id", (req, result) => {
+    sql.query("SELECT * FROM stock_market_companies WHERE id = " + req.params.id, (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result(err, null);
+            return;
+        } else {
+            console.log("created manager: ", { res });
+            result.json({ company: res[0] });
+        }
+    });
+});
+
+app.get("/companies/label/:label", (req, result) => {
+    sql.query("SELECT * FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result(err, null);
+            return;
+        } else {
+            console.log("created manager: ", { res });
+            result.json({ company: res[0] });
+        }
+    });
+});
+
 //require("./app/routes/manager.routes.js")(app);
 
 // set port, listen for requests
