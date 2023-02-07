@@ -398,3 +398,12 @@ Temporary Items
 dist
 
 package-lock.json
+
+#PASSWORD AND DB CONFIG
+# module.exports = {
+#     HOST: "localhost",
+#     USER: "root",
+#     PASSWORD: "rootroot",
+#     DB: "stock_market"
+# };
+app/config/db.config.js
