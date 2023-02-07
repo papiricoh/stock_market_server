@@ -2,21 +2,23 @@ const sql = require("./db.js");
 
 // constructor
 const Manager = function (manager) {
-    this.title = manager.title;
-    this.description = manager.description;
-    this.published = manager.published;
+    this.label_id = manager.label;
+    this.label = manager.name;
+    this.num_shares = manager.num_of_shares;
+    this.price_per_share = manager.price;
+    this.type_of_company = manager.type;
 };
 
-Manager.create = (newTutorial, result) => {
-    sql.query("INSERT INTO tutorials SET ?", newTutorial, (err, res) => {
+Manager.create = (newManager, result) => {
+    sql.query("INSERT INTO stock_market_companies SET ?", newManager, (err, res) => {
         if (err) {
             console.log("error: ", err);
             result(err, null);
             return;
         }
 
-        console.log("created manager: ", { id: res.insertId, ...newTutorial });
-        result(null, { id: res.insertId, ...newTutorial });
+        console.log("created manager: ", { id: res.insertId, ...newManager });
+        result(null, { id: res.insertId, ...newManager });
     });
 };
 
