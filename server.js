@@ -19,8 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
     res.json({ message: "Welcome ." });
 });
-app.get("/test", (req, result) => {
-    sql.query("INSERT INTO stock_market_companies (label_id, label, num_shares, price_per_share, type_of_company) VALUES ('NKKK', 'JUKla', 1200, 12223, 'Sprit')", (err, res) => {
+app.post("/test", (req, result) => {
+    let data = req.body;
+    sql.query("INSERT INTO stock_market_companies (label_id, label, num_shares, price_per_share, type_of_company) VALUES ('" + data.label_id + "', '" + data.label + "', " + data.num_shares + ", " + data.share_price + ", '" + data.type + "')", (err, res) => {
         if (err) {
             console.log("error: ", err);
             result.json(err);
@@ -28,7 +29,7 @@ app.get("/test", (req, result) => {
         }
 
         console.log("created manager: ", { label_id: res.label_id, label: res.label, num_shares: res.num_shares });
-        result.json({ label_id: res.label_id, label: res.label, num_shares: res.num_shares });
+        result.json({ result: "Company insert success - " + data.label });
     });
 });
 
