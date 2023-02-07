@@ -32,7 +32,7 @@ app.get("/test", (req, result) => {
     });
 });
 
-app.get("/companies", (req, result) => {
+app.get("/companies", (req, result) => { //ALL COMPANIES
     sql.query("SELECT * FROM stock_market_companies", (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -45,7 +45,7 @@ app.get("/companies", (req, result) => {
     });
 });
 
-app.get("/companies/:id", (req, result) => {
+app.get("/companies/:id", (req, result) => { //COMPANY BY ID
     sql.query("SELECT * FROM stock_market_companies WHERE id = " + req.params.id, (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -58,7 +58,7 @@ app.get("/companies/:id", (req, result) => {
     });
 });
 
-app.get("/companies/label/:label", (req, result) => {
+app.get("/companies/label/:label", (req, result) => { //COMPANY BY LABEL
     sql.query("SELECT * FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -72,7 +72,7 @@ app.get("/companies/label/:label", (req, result) => {
 });
 
 
-app.get("/companies/label/:label/fullhistory", (req, result) => {
+app.get("/companies/label/:label/fullhistory", (req, result) => { //COMPANY FULL HISTORY
     sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "')", (err, res) => {
         if (err) {
             console.log("error: ", err);
@@ -85,7 +85,7 @@ app.get("/companies/label/:label/fullhistory", (req, result) => {
     });
 });
 
-app.get("/companies/label/:label/history", (req, result) => {
+app.get("/companies/label/:label/history", (req, result) => { //COMPANY HISTORY TO 40
     sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "') ORDER BY price_change_date DESC LIMIT 40", (err, res) => {
         if (err) {
             console.log("error: ", err);
