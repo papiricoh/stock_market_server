@@ -23,7 +23,7 @@ app.get("/test", (req, result) => {
     sql.query("INSERT INTO stock_market_companies (label_id, label, num_shares, price_per_share, type_of_company) VALUES ('NKKK', 'JUKla', 1200, 12223, 'Sprit')", (err, res) => {
         if (err) {
             console.log("error: ", err);
-            result(err, null);
+            result.json(err);
             return;
         }
 
@@ -36,7 +36,7 @@ app.get("/companies/:id", (req, result) => {
     sql.query("SELECT * FROM stock_market_companies WHERE id = " + req.params.id, (err, res) => {
         if (err) {
             console.log("error: ", err);
-            result(err, null);
+            result.json(err);
             return;
         } else {
             console.log("created manager: ", { res });
@@ -49,11 +49,38 @@ app.get("/companies/label/:label", (req, result) => {
     sql.query("SELECT * FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (err, res) => {
         if (err) {
             console.log("error: ", err);
-            result(err, null);
+            result.json(err);
             return;
         } else {
             console.log("created manager: ", { res });
             result.json({ company: res[0] });
+        }
+    });
+});
+
+
+app.get("/companies/label/:label/fullhistory", (req, result) => {
+    sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "')", (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result.json(err);
+            return;
+        } else {
+            console.log("created manager: ", { res });
+            result.json({ res });
+        }
+    });
+});
+
+app.get("/companies/label/:label/history", (req, result) => {
+    sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "') ORDER BY price_change_date DESC LIMIT 40", (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result.json(err);
+            return;
+        } else {
+            console.log("created manager: ", { res });
+            result.json({ res });
         }
     });
 });
