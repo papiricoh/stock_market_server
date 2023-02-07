@@ -32,6 +32,19 @@ app.get("/test", (req, result) => {
     });
 });
 
+app.get("/companies", (req, result) => {
+    sql.query("SELECT * FROM stock_market_companies", (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result.json(err);
+            return;
+        } else {
+            console.log("created manager: ", { res });
+            result.json({ res });
+        }
+    });
+});
+
 app.get("/companies/:id", (req, result) => {
     sql.query("SELECT * FROM stock_market_companies WHERE id = " + req.params.id, (err, res) => {
         if (err) {
