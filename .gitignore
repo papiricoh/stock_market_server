@@ -406,4 +406,4 @@ package-lock.json
 #     PASSWORD: "rootroot",
 #     DB: "stock_market"
 # };
-app/config/db.config.js
+app/config/*
