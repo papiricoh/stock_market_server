@@ -19,16 +19,17 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
     res.json({ message: "Welcome ." });
 });
-app.post("/test", (req, result) => {
+app.post("/companies/add", (req, result) => {
     let data = req.body;
-    sql.query("INSERT INTO stock_market_companies (label_id, label, num_shares, price_per_share, type_of_company) VALUES ('" + data.label_id + "', '" + data.label + "', " + data.num_shares + ", " + data.share_price + ", '" + data.type + "')", (err, res) => {
+    sql.query("INSERT INTO stock_market_companies (label_id, label, num_shares, type_of_company) VALUES ('" + data.label_id + "', '" + data.label + "', " + data.num_shares + ", '" + data.type + "')", (err, res) => {
         if (err) {
             console.log("error: ", err);
             result.json(err);
             return;
+        } else {
+
         }
 
-        console.log("created manager: ", { label_id: res.label_id, label: res.label, num_shares: res.num_shares });
         result.json({ result: "Company insert success - " + data.label });
     });
 });
@@ -46,15 +47,27 @@ app.get("/companies", (req, result) => { //ALL COMPANIES
     });
 });
 
-app.get("/companies/:id", (req, result) => { //COMPANY BY ID
-    sql.query("SELECT * FROM stock_market_companies WHERE id = " + req.params.id, (err, res) => {
+app.get("/companies/:id", (req, result) => { //COMPANY BY LABEL
+    sql.query("SELECT * FROM stock_market_companies WHERE id = '" + req.params.id + "'", (err, res) => {
         if (err) {
             console.log("error: ", err);
             result.json(err);
             return;
         } else {
-            console.log("created manager: ", { res });
-            result.json({ company: res[0] });
+            sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE id = '" + req.params.id + "') ORDER BY price_change_date DESC LIMIT 1", (err2, res2) => {
+                if (err2) {
+                    console.log("error: ", err);
+                    result.json(err);
+                    return;
+                } else {
+                    if (res2[0] != null) {
+                        res[0].price = res2[0].share_price;
+                        res[0].shares = { num_of_free_shares: res2[0].num_of_free_shares, num_of_bought_shares: res2[0].num_of_bought_shares, num_of_owner_shares: res2[0].num_of_owner_shares };
+                    }
+                    console.log("returned company: ", { res });
+                    result.json({ company: res });
+                }
+            });
         }
     });
 });
@@ -66,8 +79,42 @@ app.get("/companies/label/:label", (req, result) => { //COMPANY BY LABEL
             result.json(err);
             return;
         } else {
-            console.log("created manager: ", { res });
-            result.json({ company: res[0] });
+            sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "') ORDER BY price_change_date DESC LIMIT 1", (err2, res2) => {
+                if (err2) {
+                    console.log("error: ", err);
+                    result.json(err);
+                    return;
+                } else {
+                    if (res2[0] != null) {
+                        res[0].price = res2[0].share_price;
+                        res[0].shares = { num_of_free_shares: res2[0].num_of_free_shares, num_of_bought_shares: res2[0].num_of_bought_shares, num_of_owner_shares: res2[0].num_of_owner_shares };
+                    }
+                    console.log("returned company: ", { res });
+                    result.json({ company: res });
+                }
+            });
+        }
+    });
+});
+app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
+    let t = 'Index';
+    sql.query("SELECT * FROM stock_market_companies WHERE type_of_company = '" + t + "'", (err, res) => {
+        if (err) {
+            console.log("error: ", err);
+            result.json(err);
+            return;
+        } else {
+            sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE type_of_company = '" + t + "') ORDER BY price_change_date DESC LIMIT 1", (err2, res2) => {
+                if (err) {
+                    console.log("error: ", err);
+                    result.json(err);
+                    return;
+                } else {
+                    res[0].price = res2[0];
+                    console.log("returned company: ", { res });
+                    result.json({ company: res });
+                }
+            });
         }
     });
 });
