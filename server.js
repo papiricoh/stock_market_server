@@ -27,7 +27,6 @@ app.post("/companies/add", (req, result) => {
     let data = req.body;
     sql.query("INSERT INTO stock_market_companies (label_id, label, num_shares, type_of_company) VALUES ('" + data.label_id + "', '" + data.label + "', " + data.num_shares + ", '" + data.type + "')", (err, res) => {
         if (err) {
-            console.log("error: ", err);
             result.json(err);
             return;
         } else {
@@ -39,7 +38,6 @@ app.post("/companies/add", (req, result) => {
             }
             sql.query("INSERT INTO stock_market_shares_value (id_company, num_of_free_shares, num_of_bought_shares, num_of_owner_shares, share_price) VALUES ((SELECT id FROM stock_market_companies WHERE label_id = '" + data.label_id + "' ), '" + data.num_of_free_shares + "', '" + data.num_of_bought_shares + "', " + data.num_of_owner_shares + ", '" + data.share_price + "')", (err2, res2) => {
                 if (err2) {
-                    console.log("error: ", err2);
                     result.json(err2);
                     return;
                 } else {
@@ -54,11 +52,9 @@ app.post("/companies/add", (req, result) => {
 app.get("/companies", (req, result) => { //ALL COMPANIES
     sql.query("SELECT * FROM stock_market_companies", (err, res) => {
         if (err) {
-            console.log("error: ", err);
             result.json(err);
             return;
         } else {
-            console.log("created manager: ", { res });
             result.json({ res });
         }
     });
@@ -67,13 +63,11 @@ app.get("/companies", (req, result) => { //ALL COMPANIES
 app.get("/companies/:id", (req, result) => { //COMPANY BY LABEL
     sql.query("SELECT * FROM stock_market_companies WHERE id = '" + req.params.id + "'", (err, res) => {
         if (err) {
-            console.log("error: ", err);
             result.json(err);
             return;
         } else {
             sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE id = '" + req.params.id + "') ORDER BY price_change_date DESC LIMIT 1", (err2, res2) => {
                 if (err2) {
-                    console.log("error: ", err);
                     result.json(err);
                     return;
                 } else {
@@ -81,7 +75,6 @@ app.get("/companies/:id", (req, result) => { //COMPANY BY LABEL
                         res[0].price = res2[0].share_price;
                         res[0].shares = { num_of_free_shares: res2[0].num_of_free_shares, num_of_bought_shares: res2[0].num_of_bought_shares, num_of_owner_shares: res2[0].num_of_owner_shares };
                     }
-                    console.log("returned company: ", { res });
                     result.json({ company: res });
                 }
             });
@@ -92,13 +85,11 @@ app.get("/companies/:id", (req, result) => { //COMPANY BY LABEL
 app.get("/companies/label/:label", (req, result) => { //COMPANY BY LABEL
     sql.query("SELECT * FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (err, res) => {
         if (err) {
-            console.log("error: ", err);
             result.json(err);
             return;
         } else {
             sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "') ORDER BY price_change_date DESC LIMIT 1", (err2, res2) => {
                 if (err2) {
-                    console.log("error: ", err);
                     result.json(err);
                     return;
                 } else {
@@ -106,7 +97,6 @@ app.get("/companies/label/:label", (req, result) => { //COMPANY BY LABEL
                         res[0].price = res2[0].share_price;
                         res[0].shares = { num_of_free_shares: res2[0].num_of_free_shares, num_of_bought_shares: res2[0].num_of_bought_shares, num_of_owner_shares: res2[0].num_of_owner_shares };
                     }
-                    console.log("returned company: ", { res });
                     result.json({ company: res });
                 }
             });
@@ -117,13 +107,11 @@ app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
     let t = 'Index';
     sql.query("SELECT * FROM stock_market_companies WHERE type_of_company = '" + t + "'", (err, res) => {
         if (err) {
-            console.log("error: ", err);
             result.json(err);
             return;
         } else {
             sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE type_of_company = '" + t + "') ORDER BY price_change_date DESC LIMIT 1", (err2, res2) => {
                 if (err) {
-                    console.log("error: ", err);
                     result.json(err);
                     return;
                 } else {
@@ -136,16 +124,33 @@ app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
     });
 });
 
+app.post("/companies/label/:label/movement/add", (req, result) => {
+    let data = req.body;
+    let id = 0;
+    sql.query("SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (err, res) => {
+        if (err) {
+            result.json(err);
+            return;
+        } else {
+            if (res[0] == null) {
+                result.json({ result: "Company with label: " + req.params.label + " not exists" })
+            } else {
+                id = res[0].id;
+
+            }
+        }
+    });
+});
+
 
 app.get("/companies/label/:label/fullhistory", (req, result) => { //COMPANY FULL HISTORY
     sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "')", (err, res) => {
         if (err) {
-            console.log("error: ", err);
+
             result.json(err);
             return;
         } else {
-            console.log("created manager: ", { res });
-            result.json({ res });
+            result.json({ fullHistory: res });
         }
     });
 });
@@ -153,12 +158,10 @@ app.get("/companies/label/:label/fullhistory", (req, result) => { //COMPANY FULL
 app.get("/companies/label/:label/history", (req, result) => { //COMPANY HISTORY TO 40
     sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "') ORDER BY price_change_date DESC LIMIT 40", (err, res) => {
         if (err) {
-            console.log("error: ", err);
             result.json(err);
             return;
         } else {
-            console.log("created manager: ", { res });
-            result.json({ res });
+            result.json({ history: res });
         }
     });
 });
