@@ -7,6 +7,10 @@ var corsOptions = {
     origin: "http://localhost:8081"
 };
 
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
 app.use(cors(corsOptions));
 
 // parse requests of content-type - application/json
@@ -27,10 +31,23 @@ app.post("/companies/add", (req, result) => {
             result.json(err);
             return;
         } else {
+            if (Number(data.num_of_free_shares) + Number(data.num_of_bought_shares) + Number(data.num_of_owner_shares) != data.num_shares) {
+                let random = getRandomInt(data.num_shares);
+                data.num_of_free_shares = random;
+                data.num_of_bought_shares = data.num_shares - random;
+                data.num_of_owner_shares = 0;
+            }
+            sql.query("INSERT INTO stock_market_shares_value (id_company, num_of_free_shares, num_of_bought_shares, num_of_owner_shares, share_price) VALUES ((SELECT id FROM stock_market_companies WHERE label_id = '" + data.label_id + "' ), '" + data.num_of_free_shares + "', '" + data.num_of_bought_shares + "', " + data.num_of_owner_shares + ", '" + data.share_price + "')", (err2, res2) => {
+                if (err2) {
+                    console.log("error: ", err2);
+                    result.json(err2);
+                    return;
+                } else {
+                    result.json({ result: "Company insert success - " + data.label });
+                }
 
+            });
         }
-
-        result.json({ result: "Company insert success - " + data.label });
     });
 });
 
