@@ -55,7 +55,7 @@ app.get("/companies", (req, result) => { //ALL COMPANIES
             result.json(err);
             return;
         } else {
-            result.json({ res });
+            result.json({ result: res });
         }
     });
 });
@@ -75,7 +75,7 @@ app.get("/companies/:id", (req, result) => { //COMPANY BY LABEL
                         res[0].price = res2[0].share_price;
                         res[0].shares = { num_of_free_shares: res2[0].num_of_free_shares, num_of_bought_shares: res2[0].num_of_bought_shares, num_of_owner_shares: res2[0].num_of_owner_shares };
                     }
-                    result.json({ company: res });
+                    result.json({ result: res });
                 }
             });
         }
@@ -97,7 +97,7 @@ app.get("/companies/label/:label", (req, result) => { //COMPANY BY LABEL
                         res[0].price = res2[0].share_price;
                         res[0].shares = { num_of_free_shares: res2[0].num_of_free_shares, num_of_bought_shares: res2[0].num_of_bought_shares, num_of_owner_shares: res2[0].num_of_owner_shares };
                     }
-                    result.json({ company: res });
+                    result.json({ result: res });
                 }
             });
         }
@@ -116,30 +116,50 @@ app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
                     return;
                 } else {
                     res[0].price = res2[0];
-                    console.log("returned company: ", { res });
-                    result.json({ company: res });
+                    result.json({ result: res });
                 }
             });
         }
     });
 });
 
-app.post("/companies/label/:label/movement/add", (req, result) => {
-    let data = req.body;
-    let id = 0;
-    sql.query("SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (err, res) => {
-        if (err) {
-            result.json(err);
-            return;
-        } else {
-            if (res[0] == null) {
-                result.json({ result: "Company with label: " + req.params.label + " not exists" })
-            } else {
-                id = res[0].id;
+app.get("/test", (req, result) => {
+    result.json("test");
+});
 
+app.post("/companies/label/:label/movement/add", (req, result) => {
+    let data = req.body; //shares_to_buy, user_id
+    let id = 0;
+    if (data.shares_to_buy <= 0) {
+        result.json({ result: { error: "" } });
+    } else {
+        sql.query("SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (find_company_err, find_company_res) => {
+            if (find_company_err) {
+                result.json(find_company_err);
+                return;
+            } else {
+                if (find_company_res[0] == null) {
+                    result.json({ result: "Company with label: " + req.params.label + " not exists" })
+                } else {
+                    id = find_company_res[0].id;
+                    let last_transaction = {};
+                    sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = " + id + " ORDER BY price_change_date DESC LIMIT 1", (get_value_err, get_value_res) => {
+                        if (get_value_err) {
+                            result.json(get_value_err);
+                            return;
+                        } else {
+                            if (get_value_res[0] == null) {
+                                result.json({ result: "Company with label: " + req.params.label + " values not exists" })
+                            } else {
+                                last_transaction = get_value_res[0];
+                                result.json(last_transaction);
+                            }
+                        };
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 });
 
 
@@ -150,7 +170,7 @@ app.get("/companies/label/:label/fullhistory", (req, result) => { //COMPANY FULL
             result.json(err);
             return;
         } else {
-            result.json({ fullHistory: res });
+            result.json({ result: res });
         }
     });
 });
@@ -161,7 +181,7 @@ app.get("/companies/label/:label/history", (req, result) => { //COMPANY HISTORY 
             result.json(err);
             return;
         } else {
-            result.json({ history: res });
+            result.json({ result: res });
         }
     });
 });
