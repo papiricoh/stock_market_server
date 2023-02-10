@@ -154,7 +154,6 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
 async function getLastTransaction(company_id) {
     let res = [];
     await sql.promise().query("SELECT * FROM stock_market_shares_value WHERE id_company = " + company_id + " ORDER BY price_change_date DESC LIMIT 1").then( ([rows,fields]) => {
-        console.log(rows);
         res = rows;
     });;
     return res;
