@@ -123,10 +123,10 @@ app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
     });
 });
 
-app.get("/test", (req, result) => {
-
-    console.log(getLastTransaction(1));
-    result.json(getLastTransaction(1));
+app.get("/test", async (req, result) =>  {
+    const res = await getLastTransaction(1);
+    console.log(res);
+    result.json(res);
 });
 
 app.post("/companies/label/:label/movement/add", (req, result) => {
@@ -152,9 +152,12 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
 });
 
 async function getLastTransaction(company_id) {
-    const ret = await sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = " + company_id + " ORDER BY price_change_date DESC LIMIT 1");
-    console.log(ret);
-    //return ret;
+    let res = [];
+    await sql.promise().query("SELECT * FROM stock_market_shares_value WHERE id_company = " + company_id + " ORDER BY price_change_date DESC LIMIT 1").then( ([rows,fields]) => {
+        console.log(rows);
+        res = rows;
+    });;
+    return res;
 }
 
 app.get("/companies/label/:label/fullhistory", (req, result) => { //COMPANY FULL HISTORY
