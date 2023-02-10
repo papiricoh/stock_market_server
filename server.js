@@ -124,7 +124,9 @@ app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
 });
 
 app.get("/test", (req, result) => {
-    result.json("test");
+
+    console.log(getLastTransaction(1));
+    result.json(getLastTransaction(1));
 });
 
 app.post("/companies/label/:label/movement/add", (req, result) => {
@@ -134,7 +136,7 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
         result.json({ result: { error: "" } });
     } else {
         sql.query("SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (find_company_err, find_company_res) => {
-            if (find_company_err) {
+            if (err) {
                 result.json(find_company_err);
                 return;
             } else {
@@ -142,26 +144,18 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
                     result.json({ result: "Company with label: " + req.params.label + " not exists" })
                 } else {
                     id = find_company_res[0].id;
-                    let last_transaction = {};
-                    sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = " + id + " ORDER BY price_change_date DESC LIMIT 1", (get_value_err, get_value_res) => {
-                        if (get_value_err) {
-                            result.json(get_value_err);
-                            return;
-                        } else {
-                            if (get_value_res[0] == null) {
-                                result.json({ result: "Company with label: " + req.params.label + " values not exists" })
-                            } else {
-                                last_transaction = get_value_res[0];
-                                result.json(last_transaction);
-                            }
-                        };
-                    });
+
                 }
             }
         });
     }
 });
 
+async function getLastTransaction(company_id) {
+    const ret = await sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = " + company_id + " ORDER BY price_change_date DESC LIMIT 1");
+    console.log(ret);
+    //return ret;
+}
 
 app.get("/companies/label/:label/fullhistory", (req, result) => { //COMPANY FULL HISTORY
     sql.query("SELECT * FROM stock_market_shares_value WHERE id_company = (SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "')", (err, res) => {
