@@ -151,6 +151,7 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
                     let user_wallet = await getUserWallet(data.user_id);
                     if(user_money.money_balance >=  (last_transaction.share_price * data.shares_to_buy)) {
                         if(last_transaction.num_of_free_shares >= data.shares_to_buy) {
+                            await changeMoney(user_money, false, (last_transaction.share_price * data.shares_to_buy));
                             await updateWallet(user_money.id, data.shares_to_buy, user_wallet, req.params.label, id);
                             result.json({ result: { done: true} });
                         }else {
@@ -164,10 +165,24 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
         });
     }
 });
+
+async function changeMoney(user_money, toAdd, money_to_move) {
+    let res = [];
+    if(toAdd) {
+        await sql.promise().query("UPDATE stock_market_users SET money_balance = " + Number(Number(user_money.money_balance) + Number(money_to_move)) + " WHERE id = " + user_money.id).then( ([rows,fields]) => {
+            res = rows;
+        });
+    }else {
+        await sql.promise().query("UPDATE stock_market_users SET money_balance = " + Number(Number(user_money.money_balance) - Number(money_to_move)) + " WHERE id = " + user_money.id).then( ([rows,fields]) => {
+            res = rows;
+        });
+    }
+    return res;
+}
+
 async function searchCompanyInWallet(user_wallet, company_id) {
     let res_index = -1;
     for (let index = 0; index < user_wallet.length; index++) {
-        console.log(index, user_wallet[index].id_company, company_id)
         if (user_wallet[index].id_company == company_id) {
             res_index = index;
         }
