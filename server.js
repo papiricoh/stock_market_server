@@ -153,6 +153,7 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
                         if(last_transaction.num_of_free_shares >= data.shares_to_buy) {
                             await changeMoney(user_money, false, (last_transaction.share_price * data.shares_to_buy));
                             await updateWallet(user_money.id, data.shares_to_buy, user_wallet, req.params.label, id);
+                            await addBuyTransaction(last_transaction, data.shares_to_buy);
                             result.json({ result: { done: true} });
                         }else {
                             result.json({ result: { done: false, reason: "No Shares"} });
@@ -165,6 +166,18 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
         });
     }
 });
+
+async function addBuyTransaction(last_transaction, shares_to_buy) {
+    let total_shares = last_transaction.num_of_free_shares + last_transaction.num_of_bought_shares + last_transaction.num_of_owner_shares;
+    console.log(total_shares);
+    let new_share_price = last_transaction.share_price;
+    //TODO CALCULATE NEW SHARE PRICE
+    let res = [];
+    await sql.promise().query("INSERT INTO stock_market_shares_value (id_company, num_of_free_shares, num_of_bought_shares, num_of_owner_shares, share_price) VALUES (" + last_transaction.id_company + ", " + Number(Number(last_transaction.num_of_free_shares) - Number(shares_to_buy)) + ", " + Number(Number(last_transaction.num_of_bought_shares) + Number(shares_to_buy)) + ", " + last_transaction.num_of_owner_shares + ", " + new_share_price + ")").then( ([rows,fields]) => {
+        res = rows;
+    });
+    return res;
+}
 
 async function changeMoney(user_money, toAdd, money_to_move) {
     let res = [];
