@@ -133,29 +133,84 @@ app.post("/companies/label/:label/movement/add", (req, result) => {
     let data = req.body; //shares_to_buy, user_id
     let id = 0;
     if (data.shares_to_buy <= 0) {
-        result.json({ result: { error: "" } });
+        result.json({ result: { done: false } });
     } else {
-        sql.query("SELECT id FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", (find_company_err, find_company_res) => {
-            if (err) {
+        sql.query("SELECT * FROM stock_market_companies WHERE label_id = '" + req.params.label + "'", async (find_company_err, find_company_res) => {
+            if (find_company_err) {
                 result.json(find_company_err);
                 return;
             } else {
                 if (find_company_res[0] == null) {
-                    result.json({ result: "Company with label: " + req.params.label + " not exists" })
+                    result.json({ result: { done: false, reason: "Company with label: " + req.params.label + " not exists" }})
                 } else {
                     id = find_company_res[0].id;
-
+                    let last_transaction = await getLastTransaction(id);
+                    last_transaction = last_transaction[0];
+                    let user_money = await getUserMoney(data.user_id);
+                    user_money = user_money[0];
+                    let user_wallet = await getUserWallet(data.user_id);
+                    if(user_money.money_balance >=  (last_transaction.share_price * data.shares_to_buy)) {
+                        if(last_transaction.num_of_free_shares >= data.shares_to_buy) {
+                            await updateWallet(user_money.id, data.shares_to_buy, user_wallet, req.params.label, id);
+                            result.json({ result: { done: true} });
+                        }else {
+                            result.json({ result: { done: false, reason: "No Shares"} });
+                        }
+                    }else {
+                        result.json({ result: { done: false, reason: "No money"} });
+                    }
                 }
             }
         });
     }
 });
+async function searchCompanyInWallet(user_wallet, company_id) {
+    let res_index = -1;
+    for (let index = 0; index < user_wallet.length; index++) {
+        console.log(index, user_wallet[index].id_company, company_id)
+        if (user_wallet[index].id_company == company_id) {
+            res_index = index;
+        }
+    }
+    return res_index;
+}
+
+async function updateWallet(user_id, shares_to_buy, user_wallet, company_label, company_id) {
+    let company_index = await searchCompanyInWallet(user_wallet, company_id);
+    let res = [];
+    if(company_index == -1) {//new row
+        await sql.promise().query("INSERT INTO stock_market_shares_wallet (id_user, id_company, num_of_shares) VALUES ( " + user_id + ", (SELECT id FROM stock_market_companies WHERE label_id = '" + company_label + "'), " + shares_to_buy + ");").then( ([rows,fields]) => {
+            res = rows;
+        });
+    }else { //Update
+        await sql.promise().query("UPDATE stock_market_shares_wallet SET num_of_shares = " + Number(Number(user_wallet[company_index].num_of_shares) + Number(shares_to_buy)) + " WHERE id = " + user_wallet[company_index].id + ";").then( ([rows,fields]) => {
+            res = rows;
+        });
+    }
+    return res;
+}
+
+async function getUserMoney(user_id) {
+    let res = [];
+    await sql.promise().query("SELECT * FROM stock_market_users WHERE identifier = '" + user_id + "'").then( ([rows,fields]) => {
+        res = rows;
+    });
+    return res;
+}
+
+async function getUserWallet(user_id) {
+    let res = [];
+    await sql.promise().query("SELECT * FROM stock_market_shares_wallet WHERE id_user = (SELECT id FROM stock_market_users WHERE identifier = '" + user_id + "')").then( ([rows,fields]) => {
+        res = rows;
+    });
+    return res;
+}
 
 async function getLastTransaction(company_id) {
     let res = [];
     await sql.promise().query("SELECT * FROM stock_market_shares_value WHERE id_company = " + company_id + " ORDER BY price_change_date DESC LIMIT 1").then( ([rows,fields]) => {
         res = rows;
-    });;
+    });
     return res;
 }
 
