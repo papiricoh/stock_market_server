@@ -127,7 +127,31 @@ app.get("/test", async (req, result) => {
 
 });
 
-app.post("/companies/label/:label/movement/add", (req, result) => {
+app.post("/companies/label/:label/movement/sell", async (req, result) => {
+    let data = req.body; //shares_to_sell, user_id
+    let user_wallet = await getUserWallet(data.user_id);
+    let company = await getCompanyByLabel(req.params.label);
+    company = company[0];
+    let last_transaction = await getLastTransaction(company.id);
+    let user_money = await getUserMoney(data.user_id);
+    last_transaction = last_transaction[0];
+    user_money = user_money[0];
+    let wallet_company_index = await searchCompanyInWallet(user_wallet, company.id);
+
+
+
+
+});
+
+async function getCompanyByLabel(label) {
+    let res = [];
+    await sql.promise().query("SELECT * FROM stock_market_companies WHERE label_id = '" + label + "'").then(([rows, fields]) => {
+        res = rows;
+    });
+    return res;
+}
+
+app.post("/companies/label/:label/movement/buy", (req, result) => {
     let data = req.body; //shares_to_buy, user_id
     let id = 0;
     if (data.shares_to_buy <= 0) {
