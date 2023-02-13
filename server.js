@@ -124,9 +124,7 @@ app.get("/companies/index", (req, result) => { //COMPANY BY LABEL
 });
 
 app.get("/test", async (req, result) => {
-    const res = await getLastTransaction(1);
-    console.log(res);
-    result.json(res);
+
 });
 
 app.post("/companies/label/:label/movement/add", (req, result) => {
