@@ -8,7 +8,7 @@ npm install
 ````
 To install all components of the manager.
 
-Install the .sql file into your database.
+Install the [.sql](database.sql) file into your database.
 
 Create a file called `db.config.js` under `app/config` and paste and fill this:
 ````
