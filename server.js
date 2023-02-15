@@ -137,11 +137,31 @@ app.post("/companies/label/:label/movement/sell", async (req, result) => {
     last_transaction = last_transaction[0];
     user_money = user_money[0];
     let wallet_company_index = await searchCompanyInWallet(user_wallet, company.id);
-
-
-
-
+    if (company != null) {
+        if (wallet_company_index != -1) {
+            if (user_wallet[wallet_company_index].num_of_shares >= data.shares_to_sell) {
+                await sellWalletShares(user_wallet[wallet_company_index], data.shares_to_sell);
+                await addSellTransaction(last_transaction, data.shares_to_sell);
+                await changeMoney(user_money, true, (last_transaction.share_price * data.shares_to_sell));
+                result.json({ result: { done: true } });
+            } else {
+                result.json({ result: { done: false, reason: "Not enough Shares of company " + req.params.label } });
+            }
+        } else {
+            result.json({ result: { done: false, reason: "Not having Shares of company " + req.params.label } });
+        }
+    } else {
+        result.json({ result: { done: false, reason: "Company not exist" } });
+    }
 });
+
+async function sellWalletShares(wallet, shares_to_sell) {
+    let res = [];
+    await sql.promise().query("UPDATE stock_market_shares_wallet SET num_of_shares = num_of_shares - " + shares_to_sell + " WHERE id = " + wallet.id).then(([rows, fields]) => {
+        res = rows;
+    });
+    return res;
+}
 
 async function getCompanyByLabel(label) {
     let res = [];
@@ -192,11 +212,19 @@ app.post("/companies/label/:label/movement/buy", (req, result) => {
         });
     }
 });
+async function addSellTransaction(last_transaction, shares_to_sell) {
+    let total_shares = last_transaction.num_of_free_shares + last_transaction.num_of_bought_shares + last_transaction.num_of_owner_shares;
+    let new_share_price = Number(Number(last_transaction.share_price) - Number(last_transaction.share_price * (shares_to_sell / total_shares))).toFixed(2);
+    let res = [];
+    await sql.promise().query("INSERT INTO stock_market_shares_value (id_company, num_of_free_shares, num_of_bought_shares, num_of_owner_shares, share_price) VALUES (" + last_transaction.id_company + ", " + Number(Number(last_transaction.num_of_free_shares) + Number(shares_to_sell)) + ", " + Number(Number(last_transaction.num_of_bought_shares) - Number(shares_to_sell)) + ", " + last_transaction.num_of_owner_shares + ", " + new_share_price + ")").then(([rows, fields]) => {
+        res = rows;
+    });
+    return res;
+}
 
 async function addBuyTransaction(last_transaction, shares_to_buy) {
     let total_shares = last_transaction.num_of_free_shares + last_transaction.num_of_bought_shares + last_transaction.num_of_owner_shares;
     let new_share_price = Number(Number(last_transaction.share_price) + Number(last_transaction.share_price * (shares_to_buy / total_shares))).toFixed(2);
-    console.log(new_share_price);
     let res = [];
     await sql.promise().query("INSERT INTO stock_market_shares_value (id_company, num_of_free_shares, num_of_bought_shares, num_of_owner_shares, share_price) VALUES (" + last_transaction.id_company + ", " + Number(Number(last_transaction.num_of_free_shares) - Number(shares_to_buy)) + ", " + Number(Number(last_transaction.num_of_bought_shares) + Number(shares_to_buy)) + ", " + last_transaction.num_of_owner_shares + ", " + new_share_price + ")").then(([rows, fields]) => {
         res = rows;
